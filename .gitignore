@@ -1,0 +1,6 @@
+# secrets - .env.example is the tracked template
+.env
+.env.*
+
+# local tooling/LLM docs
+.claude/
