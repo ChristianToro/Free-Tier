@@ -275,3 +275,137 @@ None. This was planning only, and no application code exists yet.
 - Fill in `aa-map.json` from the live model lists once an Artificial Analysis
   key is available.
 - Check the Artificial Analysis Free response format against a real key.
+
+---
+
+## Session: 2026-09-29 — Implementation
+
+**Objective:** Build the app from `PLAN.md` in six milestones: repo scaffold,
+`server.js`, `sources.js`, `aa-map.json`, `app.js`, `styles.css`.
+
+### Interaction 1 — Start implementation in milestones
+
+**User Prompt**
+
+> We will now begin coding. Use the plan.md as the source of truth for the
+> structure, logic, and development. Stay within scope. The AA key is safely
+> stored in .env: do not expose it.
+>
+> Break up the work into milestones: 1)scaffold of repo architecure,
+> 2)server.js, 3)sources.js, 4)map.json file structure, 5)app.js, 6)styles.css
+
+Follow-up: "and use the prompt history skill"
+
+**Agent Outcome**
+
+All six milestones are implemented, and every server-side check in
+`PLAN.md` § Verification was run except step 8 (browser). Nothing was
+committed.
+
+Findings that shaped the code:
+
+- `.env` stores the key as `x-api-key=<redacted>`, while `PLAN.md` and
+  `.env.example` use `AA_API_KEY`. `.env` was left untouched. For testing, the
+  value was passed through the environment without being printed. The server
+  reads only `AA_API_KEY`, so the user needs to rename the variable.
+- The Artificial Analysis Free list is **4 pages (684 models)**, not the ~2 the
+  plan expected. A refresh costs about 4 calls, or about 8 a day at the
+  default 12h TTL. `README.md` and `CLAUDE.md` now say this.
+- ComparEdge `freeTier` is a boolean `true`, not a description, and
+  `startingPrice` is a number or `null`. The UI shows "Yes" and "$N".
+- The `prompt-history` skill (`~/.claude-personal/skills/prompt-history`) has
+  `disable-model-invocation: true`, so it was followed by hand.
+
+**Implementation**
+
+- [`server.js`](server.js): `loadEnv()`, `getData()`, `refresh()`,
+  `buildPayload()`, `saveCacheFile()` (tmp + rename), `serveStatic()`.
+- [`sources.js`](sources.js): `fetchAA()`, `fetchComparEdge()`, `join()`,
+  `getJSON()` (15s timeout, clear error for non-JSON replies), `retryTime()`.
+- [`aa-map.json`](aa-map.json): 14 of the 20 ComparEdge LLM slugs map to an
+  Artificial Analysis model. `openai-api`, `claude-api`, `hugging-face`,
+  `replicate`, `groq` and `phi-3-medium` are `null`. Artificial Analysis lists
+  Phi-3 Mini only, so there is no exact match for Phi-3 Medium.
+- [`public/app.js`](public/app.js), [`public/index.html`](public/index.html),
+  [`public/styles.css`](public/styles.css).
+
+**Rationale**
+
+- The cache and backoff are tracked **per source** (`fetchedAt`,
+  `nextRetryAt`, `error` for each of `aa` and `ce`). A failure in one source
+  never re-spends quota on the other or blanks its data. This refines the
+  plan's single cache without changing its behavior.
+- A missing key skips the AA fetch entirely rather than counting as a failure,
+  so it never triggers backoff.
+- Map warnings are logged once per process, because `join()` runs on every
+  request.
+- The front end only links to `http(s)` URLs, so a bad `url` value from the API
+  can't produce a `javascript:` link.
+
+**Changes**
+
+- Created: `server.js`, `sources.js`, `aa-map.json`, `fixtures/sample.json`
+  (invented "Example" rows, two of them stale), `.env.example`, `LICENSE`
+  (MIT), `README.md`.
+- Filled in (previously empty): `public/index.html`, `public/app.js`,
+  `public/styles.css`.
+- `.gitignore`: added `cache/` and `node_modules/`.
+- `CLAUDE.md`: status now "v1 implemented", commands are no longer "planned",
+  and the AA page count is noted.
+
+**Verification**
+
+Servers were run on ports 3101–3106 and checked with curl:
+
+1. Fixture mode: 5 LLMs and 7 services, no upstream calls logged, no `cache/`
+   written.
+2. No key: 20 LLMs and 79 services from ComparEdge, scores `null`, an AA error
+   in `errors`, and `cache/data.json` written. Three requests caused one
+   refresh.
+3. With the key: 4 AA calls (`X-RateLimit-Remaining` went from 95 to 92),
+   version 4.3, all 14 mapped rows scored, and no map warnings. The key did not
+   appear in the logs or in `cache/data.json`.
+4. After a restart, the server loaded `cache/data.json` and made no upstream
+   call.
+5. With an expired TTL, 5 parallel requests caused one ComparEdge refresh.
+6. With `fetch` stubbed to fail and a stale cache, 4 requests caused one
+   attempt. The stale data was served with both errors, and the next retry was
+   set 15 minutes out. A cold start while offline returned empty `llms` and
+   `services` plus the errors.
+7. Traversal: `/../server.js`, `/%2e%2e/server.js`, `/..%2fserver.js`,
+   `/%2e%2e%2f.env`, `/%00` and malformed escapes all returned 404. `POST`
+   returned 405.
+8. **Not done:** there was no browser in this session to check the page
+   visually.
+9. `git status`: `.env` and `cache/` are ignored. The test cache was deleted
+   afterwards.
+
+Also run: `node --check` on all three JS files.
+
+**Collaboration**
+
+The user set the six-milestone order, made `PLAN.md` the source of truth, and
+required that the key not be exposed. The key-name mismatch was reported back
+instead of `.env` being edited. The `aa-map.json` values are the agent's best
+guesses at each product's free-tier model and need the user's review.
+
+### Interaction 2 — Commit per milestone
+
+**User Prompt**
+
+> one commit per milestone
+
+**Agent Outcome**
+
+Made six milestone commits, plus one for `CLAUDE.md` and this file, on a new
+branch `v1-implementation` (off `main` at `4442f06`). `.env`, `.claude/` and
+`cache/` stay ignored. Not pushed.
+
+**Open Items**
+
+- Merge `v1-implementation` into `main` when reviewed.
+- Rename `x-api-key=` to `AA_API_KEY=` in `.env`.
+- Review the `aa-map.json` values (for example ChatGPT → GPT-5.5 Instant, and
+  Claude → Sonnet 5.5 medium effort).
+- Browser check (step 8): search, tabs, sorting, stale rows, dark mode, narrow
+  viewport.
