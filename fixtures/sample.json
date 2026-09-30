@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-09-01T12:00:00.000Z",
+  "aaIndexVersion": "example",
+  "llms": [
+    { "slug": "example-chat", "name": "Example Chat", "category": "llm", "startingPrice": 8, "freeTier": true, "verifiedAt": "2026-09-01", "url": "https://example.com/example-chat", "aaModelName": "Example Model Mini", "intelligence": 31.5, "speed": 142.3 },
+    { "slug": "example-assistant", "name": "Example Assistant", "category": "llm", "startingPrice": 20, "freeTier": true, "verifiedAt": "2026-08-20", "url": "https://example.com/example-assistant", "aaModelName": "Example Model Pro (low)", "intelligence": 44.2, "speed": 61.8 },
+    { "slug": "example-open-weights", "name": "Example Open Weights", "category": "llm", "startingPrice": null, "freeTier": true, "verifiedAt": "2026-07-15", "url": "https://example.com/example-open-weights", "aaModelName": "Example Open 70B", "intelligence": 12.9, "speed": null },
+    { "slug": "example-model-hub", "name": "Example Model Hub", "category": "llm", "startingPrice": 9, "freeTier": true, "verifiedAt": "2026-08-02", "url": "https://example.com/example-model-hub", "aaModelName": null, "intelligence": null, "speed": null },
+    { "slug": "example-legacy-llm", "name": "Example Legacy LLM", "category": "llm", "startingPrice": 5.5, "freeTier": true, "verifiedAt": "2026-02-10", "url": "https://example.com/example-legacy-llm", "aaModelName": "Example Legacy 1", "intelligence": 6.1, "speed": 38 }
+  ],
+  "services": [
+    { "slug": "example-code-helper", "name": "Example Code Helper", "category": "ai-coding", "startingPrice": 10, "freeTier": true, "verifiedAt": "2026-09-10", "url": "https://example.com/example-code-helper" },
+    { "slug": "example-image-studio", "name": "Example Image Studio", "category": "ai-image", "startingPrice": 12, "freeTier": true, "verifiedAt": "2026-08-28", "url": "https://example.com/example-image-studio" },
+    { "slug": "example-video-maker", "name": "Example Video Maker", "category": "ai-video", "startingPrice": 15, "freeTier": true, "verifiedAt": "2026-03-01", "url": "https://example.com/example-video-maker" },
+    { "slug": "example-voice-lab", "name": "Example Voice Lab", "category": "ai-voice", "startingPrice": null, "freeTier": true, "verifiedAt": "2026-08-15", "url": "https://example.com/example-voice-lab" },
+    { "slug": "example-agent-kit", "name": "Example Agent Kit", "category": "ai-agents", "startingPrice": 29, "freeTier": true, "verifiedAt": "2026-09-05", "url": "https://example.com/example-agent-kit" },
+    { "slug": "example-writer", "name": "Example Writer", "category": "ai-writing", "startingPrice": 7.99, "freeTier": true, "verifiedAt": "2026-07-30", "url": "https://example.com/example-writer" },
+    { "slug": "example-notes-ai", "name": "Example Notes AI", "category": "ai-productivity", "startingPrice": 4, "freeTier": true, "verifiedAt": "2026-09-12", "url": "https://example.com/example-notes-ai" }
+  ],
+  "errors": [
+    { "source": "fixture", "message": "Showing invented example data (USE_FIXTURE=1). No upstream calls were made." }
+  ]
+}

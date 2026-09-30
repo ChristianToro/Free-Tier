@@ -5,3 +5,7 @@
 
 # local tooling/LLM docs
 .claude/
+
+# fetched API data (AA terms forbid redistribution) and deps
+cache/
+node_modules/
