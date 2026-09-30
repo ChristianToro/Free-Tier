@@ -1,0 +1,22 @@
+{
+  "chatgpt": "gpt-5-5-instant-06-26",
+  "claude": "claude-sonnet-5-5-medium",
+  "gemini": "gemini-3-8-flash-medium",
+  "openai-api": null,
+  "hugging-face": null,
+  "replicate": null,
+  "claude-api": null,
+  "google-ai-studio": "gemini-3-8-flash",
+  "cohere": "command-a-plus",
+  "mistral-ai": "mistral-medium-3-5",
+  "deepseek": "deepseek-v4-1-flash",
+  "meta-ai": "muse-spark-1-3",
+  "llama": "llama-4-maverick",
+  "mistral-large": "mistral-large-3",
+  "grok-2": "grok-2-1212",
+  "command-r-plus": "command-r-plus-04-2024",
+  "phi-3-medium": null,
+  "qwen-2-5": "qwen2-5-72b-instruct",
+  "groq": null,
+  "kimi": "kimi-k3"
+}
