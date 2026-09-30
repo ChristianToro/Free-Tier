@@ -73,14 +73,23 @@ function safeUrl(url) {
 function matches(row) {
   if (state.tab === 'services' && state.category !== 'all' && row.category !== state.category) return false;
   if (!state.query) return true;
-  const hay = `${row.name} ${row.slug} ${row.category} ${row.aaModelName || ''}`.toLowerCase();
+  const models = (row.models || []).map((m) => m.name).join(' ');
+  const hay = `${row.name} ${row.slug} ${row.category} ${row.aaModelName || ''} ${models}`.toLowerCase();
   return hay.includes(state.query);
+}
+
+// A product with several free models sorts by its best model's score.
+const MODEL_KEYS = new Set(['intelligence', 'speed']);
+function sortValue(row, key) {
+  if (!row.models || !MODEL_KEYS.has(key)) return row[key];
+  const values = row.models.map((m) => m[key]).filter((v) => typeof v === 'number');
+  return values.length ? Math.max(...values) : null;
 }
 
 // Nulls always sort last, whichever direction.
 function compare(a, b, key, dir) {
-  const x = a[key];
-  const y = b[key];
+  const x = sortValue(a, key);
+  const y = sortValue(b, key);
   const xNull = x == null || x === '';
   const yNull = y == null || y === '';
   if (xNull || yNull) return xNull === yNull ? 0 : xNull ? 1 : -1;
@@ -115,10 +124,36 @@ function rowShell(row) {
   return el('tr', stale ? { className: 'stale', title: 'May be out of date: last verified more than 3 months ago' } : {});
 }
 
+// One sub-row per free model, under its product row.
+function modelRows(row) {
+  const { key } = state.sort.llms;
+  const sortKey = MODEL_KEYS.has(key) ? key : 'intelligence';
+  const dir = MODEL_KEYS.has(key) ? state.sort.llms.dir : 'desc';
+  const models = [...row.models].sort((a, b) => compare(a, b, sortKey, dir));
+  return models.map((m, i) => {
+    const tr = rowShell(row);
+    tr.classList.add('child');
+    if (i === models.length - 1) tr.classList.add('end');
+    tr.append(
+      el('td', { text: `└ ${m.name}`, className: 'name' }),
+      el('td'),
+      el('td'),
+      el('td', { text: fmtNum(m.intelligence), className: 'num' }),
+      el('td', { text: fmtNum(m.speed, 0), className: 'num' }),
+      el('td'),
+    );
+    return tr;
+  });
+}
+
+// Returns an array: the product row, then any model sub-rows.
 function llmRow(row) {
   const tr = rowShell(row);
+  const multi = Array.isArray(row.models) && row.models.length > 0;
+  const subtitle = multi ? 'Scores: see models below' : row.aaModelName ? `Scores: ${row.aaModelName}` : 'Scores: —';
   const intel = el('td', { className: 'num' }, [el('span', { text: fmtNum(row.intelligence) })]);
-  intel.append(el('span', { className: 'sub', text: row.aaModelName ? `Scores: ${row.aaModelName}` : 'Scores: —' }));
+  intel.append(el('span', { className: 'sub', text: subtitle }));
+  if (multi) tr.classList.add('has-models');
   tr.append(
     nameCell(row),
     el('td', { text: fmtFree(row.freeTier) }),
@@ -127,7 +162,7 @@ function llmRow(row) {
     el('td', { text: fmtNum(row.speed, 0), className: 'num' }),
     verifiedCell(row),
   );
-  return tr;
+  return multi ? [tr, ...modelRows(row)] : [tr];
 }
 
 function serviceRow(row) {
@@ -145,7 +180,7 @@ function serviceRow(row) {
 function renderTable(tab) {
   const rows = visibleRows(tab);
   const body = $(`rows-${tab}`);
-  body.replaceChildren(...rows.map(tab === 'llms' ? llmRow : serviceRow));
+  body.replaceChildren(...(tab === 'llms' ? rows.flatMap(llmRow) : rows.map(serviceRow)));
   $(`count-${tab}`).textContent = `(${rows.length})`;
 
   const { key, dir } = state.sort[tab];

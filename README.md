@@ -53,9 +53,11 @@ before trying again.
 
 `aa-map.json` maps each ComparEdge LLM slug to the Artificial Analysis model
 slug that the product's **free tier** actually uses, not its flagship model.
-`null` means there is no single model (for example Hugging Face or Groq). The
-server logs a warning for slugs that are missing from the map, or mapped to a
-model Artificial Analysis no longer lists.
+If a product offers several free models, map it to an array of slugs, for
+example `"groq": ["llama-4-maverick", "qwen3-32b"]`. Each model is shown as its
+own sub-row. `null` means there are no scores to show (for example Hugging
+Face). The server logs a warning for slugs that are missing from the map, or
+mapped to a model Artificial Analysis no longer lists.
 
 ## Attribution
 

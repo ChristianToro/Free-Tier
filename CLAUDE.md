@@ -15,7 +15,7 @@ A lightweight page with no login that lists **free** AI models and services. Its
 - **Artificial Analysis (AA):** `GET https://artificialanalysis.ai/api/v2/language/models/free`
   - Needs a Free-tier key in the `x-api-key` header. The key goes in `AA_API_KEY` in `.env`. The non-`/free` routes return 403 for Free keys.
   - Limited to 100 requests per fixed 24h window. Results are paginated: loop over `?page=N` while `pagination.has_more` is true. As of 2026-09-29 that is 4 pages (~680 models), so one refresh costs ~4 calls.
-  - Used **only** to add the intelligence index and output speed to LLM rows. Rows are joined through the hand-written `aa-map.json`.
+  - Used **only** to add the intelligence index and output speed to LLM rows. Rows are joined through the hand-written `aa-map.json`. Its values are an AA slug, an array of AA slugs (a product with several free models, shown as sub-rows), or `null`.
   - `null` means "not measured", never 0.
   - Its docs say never to call it from the browser and to credit https://artificialanalysis.ai/ on the page. Never commit fetched data.
 - **ComparEdge:** `GET https://comparedge.com/api/v2/discover?hasFreeTier=true&category=<cat>&limit=200`

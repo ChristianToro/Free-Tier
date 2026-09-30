@@ -409,3 +409,86 @@ branch `v1-implementation` (off `main` at `4442f06`). `.env`, `.claude/` and
   Claude → Sonnet 5.5 medium effort).
 - Browser check (step 8): search, tabs, sorting, stale rows, dark mode, narrow
   viewport.
+
+---
+
+## Session: 2026-09-30
+
+**Objective:** Let `aa-map.json` map one ComparEdge product to several free AA models.
+
+### Interaction 1 — Multi-model entries in aa-map.json
+
+**User Prompt**
+
+> I am manually asjusting the aa-map file. Some platforms have multiple models
+> offered free, so have inadvertantly labeled null. could the comparedge slug
+> accommodate nested objects?
+
+**Agent Outcome**
+
+Yes. A map value can now be an AA slug, an **array of AA slugs**, or `null`,
+for example `"groq": ["llama-4-maverick", "qwen3-32b"]`. For a product with two
+or more models, `join()` adds `models: [{name, intelligence, speed}]` to the row
+and leaves its own scores `null`. The UI shows the product row with
+"Scores: see models below", then one indented `└ <model>` sub-row per model.
+Strings, `null` and one-element arrays behave exactly as before.
+
+**Rationale**
+
+- A flat array was chosen over `{ models: [...], note }` objects because it's
+  less to hand-write, and AA already supplies each model's display name.
+- A multi-model product sorts by its best model's score (`sortValue()`), so it
+  ranks by what its free tier can do, and nulls still sort last. Sub-rows are
+  sorted by the active score column, or by intelligence otherwise.
+- A slug AA doesn't list is kept as a sub-row with its slug as the name and
+  "—" scores, and a warning is logged. Values of any other type log a warning
+  and are treated as `null`.
+- `join()` runs on every request, so no cache change or extra AA quota is
+  needed.
+
+**Changes**
+
+- [`sources.js`](sources.js): new `mapSlugs()` and `aaModel()` helpers, and
+  `join()` emits `models` for multi-model rows.
+- [`public/app.js`](public/app.js): `sortValue()`, `modelRows()`, `llmRow()`
+  now returns an array (the product row plus sub-rows), search also matches
+  model names, and the product count excludes sub-rows.
+- [`public/styles.css`](public/styles.css): `tr.has-models`, `tr.child` and
+  `tr.child.end` styles.
+- [`fixtures/sample.json`](fixtures/sample.json): "Example Model Hub" now has 3
+  invented models, one of them unscored.
+- `PLAN.md`, `README.md`, `CLAUDE.md`: describe the array form.
+- `aa-map.json`: not touched. The user is editing it by hand.
+
+**Verification**
+
+- `node --check` passes on all three JS files, and the fixture parses.
+- A `node -e` test of `join()` with fake data covered a string, `null`, a
+  one-element array, a 3-element array with an unlisted slug, a number, a
+  missing slug, and AA unavailable. It gave the expected shapes and 3
+  warnings.
+- `app.js` was run against a stub DOM in a scratch script. The sub-rows render
+  under their product in both intelligence-desc and speed-asc sort, the
+  search "open 8b" finds the product, and the count is 5 products.
+- `USE_FIXTURE=1` server on port 3107: `/api/data` returns `models` (3 of them)
+  on the hub row, and the other rows are unchanged.
+- The user's current `aa-map.json` (20 entries, no arrays yet) passes the new
+  checks.
+- **Not done:** a visual browser check of the sub-row styling.
+
+**Collaboration**
+
+The user chose one sub-row per model (over "best model only" or a combined
+subtitle) and a flat array (over nested objects with labels).
+
+### Interaction 2 — Commit
+
+**User Prompt**
+
+> commit these changes
+
+**Agent Outcome**
+
+Committed the multi-model change on `v1-implementation`. The user's
+hand-edited `aa-map.json` was left unstaged, since it is their own in-progress
+work and not part of this change. Not pushed.

@@ -161,6 +161,13 @@ td.name a:hover { text-decoration: underline; }
 tr.stale td { opacity: 0.5; }
 tr.stale .verified::after { content: " ⚠"; }
 
+/* Model sub-rows under a product with several free models */
+tbody tr.has-models td, tbody tr.child td { border-bottom: 0; }
+tbody tr.child.end td { border-bottom: 1px solid var(--border); }
+tbody tr.child:last-child td { border-bottom: 0; }
+tr.child td { padding-top: 3px; padding-bottom: 3px; font-size: 0.88rem; color: var(--muted); }
+tr.child td.name { padding-left: 28px; }
+
 /* Footer */
 .site-footer {
   margin-top: 28px;
