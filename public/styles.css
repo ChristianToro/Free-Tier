@@ -33,6 +33,9 @@
 
 * { box-sizing: border-box; }
 
+/* Keep the hidden attribute working on elements that set display (e.g. .chips) */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);

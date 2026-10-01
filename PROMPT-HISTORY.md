@@ -491,4 +491,42 @@ subtitle) and a flat array (over nested objects with labels).
 
 Committed the multi-model change on `v1-implementation`. The user's
 hand-edited `aa-map.json` was left unstaged, since it is their own in-progress
-work and not part of this change. Not pushed.
+work and not part of this change. Commit `629231a`. Not pushed.
+
+### Interaction 3 — Chips visible on the LLM tab
+
+**User Prompt**
+
+> There is a rendering bug:
+>
+> when the server is started, the chips div is still present while the LLM tab
+> is selected even though `chips.hidden = state.tab !== 'services' || ...`
+> attempts to hide them.
+
+**Agent Outcome**
+
+The JS was correct. The bug was in the CSS: `.chips { display: flex }` overrode
+the browser's built-in `[hidden] { display: none }`, because page styles take
+priority over built-in ones. Fixed with one global rule in
+[`public/styles.css`](public/styles.css):
+
+```css
+/* Keep the hidden attribute working on elements that set display (e.g. .chips) */
+[hidden] { display: none !important; }
+```
+
+**Rationale**
+
+A global rule was used instead of `.chips[hidden]`, so every element toggled
+with `hidden` (banner, panels, empty state, status) stays safe if it later sets
+`display`.
+
+**Verification**
+
+- Every `hidden` use in `public/` is meant to hide; none relies on showing a
+  hidden element.
+- A fixture server on port 3108 served `styles.css` with the new rule.
+- **Not done:** a visual browser check (no browser in the session).
+
+Committed on request ("commit these changes"); `aa-map.json` again left
+unstaged. Not pushed.
