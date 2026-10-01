@@ -528,5 +528,56 @@ with `hidden` (banner, panels, empty state, status) stays safe if it later sets
 - A fixture server on port 3108 served `styles.css` with the new rule.
 - **Not done:** a visual browser check (no browser in the session).
 
-Committed on request ("commit these changes"); `aa-map.json` again left
-unstaged. Not pushed.
+Committed on request ("commit these changes") as `f4699e0`. Not pushed.
+(Correction: `aa-map.json` was not "left unstaged" here. The user had already
+committed their edits as `fa67e35`.)
+
+### Interaction 4 — Check aa-map.json slugs against AA
+
+**User Prompt**
+
+> make sure the slugs in aa-map are accurate against what AA actually uses. Use
+> the cached json as reference
+
+**Agent Outcome**
+
+Checked every slug against the 686 AA models in `cache/data.json` (index v4.3,
+fetched 2026-09-30). Only 5 of 26 matched. All values now resolve, and `join()`
+on the cached data logs no map warnings.
+
+| ComparEdge slug | Was | Now |
+| --- | --- | --- |
+| chatgpt | `gpt-5.6-luna` | `gpt-5-6-luna-medium` |
+| claude | `claude-sonnet-5-5` (max) | `claude-sonnet-5-5-medium` |
+| gemini | `gemini-3-flash` (3 Flash Preview) | `gemini-3-8-flash-medium` |
+| google-ai-studio | `gemini-3.8-flash` | `gemini-3-8-flash-medium` |
+| cohere | `command-a-plus-05-2026` | `command-a-plus` |
+| mistral-ai | `mistral-medium` (original) | `mistral-medium-3-5` |
+| deepseek | `deepseek-flash` | `deepseek-v4-1-flash` |
+| groq | 6 slugs with `openai/`, `qwen/` prefixes, plus Whisper | `gpt-oss-120b`, `gpt-oss-20b`, `qwen3-8-27b-medium` |
+| replicate | 6 image/video models | `null` |
+| kimi | `kimi-k3` (max) | `kimi-k3-low` |
+
+**Rationale**
+
+- AA slugs use dashes, not dots, and have no vendor prefixes. Its plain slug is
+  usually the top effort level, so effort suffixes were picked explicitly.
+- Image, video and speech models (Replicate, Whisper) and
+  `gpt-oss-safeguard-20b` aren't in AA's language endpoint, so they were
+  removed instead of showing as unscored rows.
+
+**Collaboration**
+
+The user chose the free-tier default effort over the plain slugs, removing the
+non-LLM models, `deepseek-v4-1-flash`, and updating Mistral Medium and Gemini to
+their current versions. The specific effort levels are the agent's guesses:
+medium wherever AA offers it, the AA default (high) for gpt-oss since AA has
+no medium, and low for Kimi K3 since AA only has low and max.
+
+**Verification**
+
+`join()` was run on the cached CE and AA data with the new map. All 11 mapped
+products resolve, with 0 warnings. Gemini 3.8 Flash (medium) has no measured
+speed in AA, so it shows "—".
+
+Committed on request ("commit these changes"). Not pushed.
