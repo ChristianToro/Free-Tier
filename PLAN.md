@@ -69,10 +69,12 @@ free-tier/
   - The row shows **which AA model the scores come from**, for example "Scores: GPT-5 mini". This matters because a product's free tier may not use its best model.
   - A slug that is missing from the map, or a mapped AA slug that isn't in AA's data, is logged as a warning so the map gets updated.
   - A mapping of `null` (for platforms like Hugging Face, Replicate or Groq) means "no single model" and shows "—".
+  - A mapping to an **array of AA slugs** means the product offers several free models. The row then gets a `models: [{name, intelligence, speed}]` array (its own scores stay `null`), and the UI shows one indented sub-row per model. The product sorts by its best model. A one-element array is treated like a single slug.
 - Every fetch gets a 15s `AbortSignal.timeout`. If the response isn't JSON (for example a Cloudflare challenge page), it throws a clear error.
 
 ## aa-map.json
-- A flat object keyed by ComparEdge slug, for example `{ "chatgpt": "<aa-slug>", "hugging-face": null, ... }`.
+- A flat object keyed by ComparEdge slug, for example `{ "chatgpt": "<aa-slug>", "groq": ["<aa-slug>", "<aa-slug>"], "hugging-face": null, ... }`.
+- Each value is an AA slug, an array of AA slugs (several free models), or `null`. Any other value logs a warning and is treated as `null`.
 - Written by hand once from the live lists, and reviewed when the server logs a warning.
 - Each value should be the model the product's **free tier** actually gives, not its flagship model.
 

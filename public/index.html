@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free-Tier AI Finder</title>
+  <meta name="description" content="AI models and services with a free tier.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Free-Tier AI Finder</h1>
+    <p class="tagline">AI models and services with a free tier.</p>
+  </header>
+
+  <main>
+    <div id="error-banner" class="banner" role="alert" hidden>
+      <ul id="error-list"></ul>
+    </div>
+
+    <div class="controls">
+      <input id="search" type="search" placeholder="Search by name or category" aria-label="Search">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab" role="tab" id="tab-llms" data-tab="llms" aria-selected="true">LLMs <span class="count" id="count-llms"></span></button>
+        <button type="button" class="tab" role="tab" id="tab-services" data-tab="services" aria-selected="false">Other AI services <span class="count" id="count-services"></span></button>
+      </div>
+    </div>
+
+    <div id="chips" class="chips" hidden></div>
+
+    <p id="status" class="status">Loading…</p>
+
+    <section id="panel-llms" class="panel" role="tabpanel" aria-labelledby="tab-llms">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-key="name" class="sortable">Product</th>
+              <th>Free tier</th>
+              <th data-key="startingPrice" class="sortable num">Starting price</th>
+              <th data-key="intelligence" class="sortable num">Intelligence</th>
+              <th data-key="speed" class="sortable num">Speed (tok/s)</th>
+              <th data-key="verifiedAt" class="sortable">Verified</th>
+            </tr>
+          </thead>
+          <tbody id="rows-llms"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panel-services" class="panel" role="tabpanel" aria-labelledby="tab-services" hidden>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-key="name" class="sortable">Name</th>
+              <th data-key="category" class="sortable">Category</th>
+              <th>Free tier</th>
+              <th data-key="startingPrice" class="sortable num">Starting price</th>
+              <th data-key="verifiedAt" class="sortable">Verified</th>
+            </tr>
+          </thead>
+          <tbody id="rows-services"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p id="empty" class="empty" hidden>No results.</p>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      LLM scores from <a href="https://artificialanalysis.ai/" target="_blank" rel="noopener">Artificial Analysis</a><span id="aa-version"></span>.
+      Free-tier and pricing data from <a href="https://comparedge.com" target="_blank" rel="noopener">ComparEdge</a>.
+    </p>
+    <p id="updated"></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "chatgpt": [
+    "gpt-5-6-luna-medium"
+  ],
+  "claude": [
+    "claude-sonnet-5-5-medium"
+  ],
+  "gemini": [
+    "gemini-3-8-flash-medium"
+  ],
+  "openai-api": null,
+  "hugging-face": null,
+  "replicate": null,
+  "claude-api": null,
+  "google-ai-studio": [
+    "gemini-3-8-flash-medium"
+  ],
+  "cohere": [
+    "command-a-plus"
+  ],
+  "mistral-ai": [
+    "mistral-medium-3-5"
+  ],
+  "deepseek": [
+    "deepseek-v4-1-flash"
+  ],
+  "meta-ai": null,
+  "llama": null,
+  "mistral-large": null,
+  "grok-2": null,
+  "command-r-plus": null,
+  "phi-3-medium": null,
+  "qwen-2-5": null,
+  "groq": [
+    "gpt-oss-120b",
+    "gpt-oss-20b",
+    "qwen3-8-27b-medium"
+  ],
+  "kimi": [
+    "kimi-k3-low"
+  ]
+}

@@ -275,3 +275,309 @@ None. This was planning only, and no application code exists yet.
 - Fill in `aa-map.json` from the live model lists once an Artificial Analysis
   key is available.
 - Check the Artificial Analysis Free response format against a real key.
+
+---
+
+## Session: 2026-09-29 — Implementation
+
+**Objective:** Build the app from `PLAN.md` in six milestones: repo scaffold,
+`server.js`, `sources.js`, `aa-map.json`, `app.js`, `styles.css`.
+
+### Interaction 1 — Start implementation in milestones
+
+**User Prompt**
+
+> We will now begin coding. Use the plan.md as the source of truth for the
+> structure, logic, and development. Stay within scope. The AA key is safely
+> stored in .env: do not expose it.
+>
+> Break up the work into milestones: 1)scaffold of repo architecure,
+> 2)server.js, 3)sources.js, 4)map.json file structure, 5)app.js, 6)styles.css
+
+Follow-up: "and use the prompt history skill"
+
+**Agent Outcome**
+
+All six milestones are implemented, and every server-side check in
+`PLAN.md` § Verification was run except step 8 (browser). Nothing was
+committed.
+
+Findings that shaped the code:
+
+- `.env` stores the key as `x-api-key=<redacted>`, while `PLAN.md` and
+  `.env.example` use `AA_API_KEY`. `.env` was left untouched. For testing, the
+  value was passed through the environment without being printed. The server
+  reads only `AA_API_KEY`, so the user needs to rename the variable.
+- The Artificial Analysis Free list is **4 pages (684 models)**, not the ~2 the
+  plan expected. A refresh costs about 4 calls, or about 8 a day at the
+  default 12h TTL. `README.md` and `CLAUDE.md` now say this.
+- ComparEdge `freeTier` is a boolean `true`, not a description, and
+  `startingPrice` is a number or `null`. The UI shows "Yes" and "$N".
+- The `prompt-history` skill (`~/.claude-personal/skills/prompt-history`) has
+  `disable-model-invocation: true`, so it was followed by hand.
+
+**Implementation**
+
+- [`server.js`](server.js): `loadEnv()`, `getData()`, `refresh()`,
+  `buildPayload()`, `saveCacheFile()` (tmp + rename), `serveStatic()`.
+- [`sources.js`](sources.js): `fetchAA()`, `fetchComparEdge()`, `join()`,
+  `getJSON()` (15s timeout, clear error for non-JSON replies), `retryTime()`.
+- [`aa-map.json`](aa-map.json): 14 of the 20 ComparEdge LLM slugs map to an
+  Artificial Analysis model. `openai-api`, `claude-api`, `hugging-face`,
+  `replicate`, `groq` and `phi-3-medium` are `null`. Artificial Analysis lists
+  Phi-3 Mini only, so there is no exact match for Phi-3 Medium.
+- [`public/app.js`](public/app.js), [`public/index.html`](public/index.html),
+  [`public/styles.css`](public/styles.css).
+
+**Rationale**
+
+- The cache and backoff are tracked **per source** (`fetchedAt`,
+  `nextRetryAt`, `error` for each of `aa` and `ce`). A failure in one source
+  never re-spends quota on the other or blanks its data. This refines the
+  plan's single cache without changing its behavior.
+- A missing key skips the AA fetch entirely rather than counting as a failure,
+  so it never triggers backoff.
+- Map warnings are logged once per process, because `join()` runs on every
+  request.
+- The front end only links to `http(s)` URLs, so a bad `url` value from the API
+  can't produce a `javascript:` link.
+
+**Changes**
+
+- Created: `server.js`, `sources.js`, `aa-map.json`, `fixtures/sample.json`
+  (invented "Example" rows, two of them stale), `.env.example`, `LICENSE`
+  (MIT), `README.md`.
+- Filled in (previously empty): `public/index.html`, `public/app.js`,
+  `public/styles.css`.
+- `.gitignore`: added `cache/` and `node_modules/`.
+- `CLAUDE.md`: status now "v1 implemented", commands are no longer "planned",
+  and the AA page count is noted.
+
+**Verification**
+
+Servers were run on ports 3101–3106 and checked with curl:
+
+1. Fixture mode: 5 LLMs and 7 services, no upstream calls logged, no `cache/`
+   written.
+2. No key: 20 LLMs and 79 services from ComparEdge, scores `null`, an AA error
+   in `errors`, and `cache/data.json` written. Three requests caused one
+   refresh.
+3. With the key: 4 AA calls (`X-RateLimit-Remaining` went from 95 to 92),
+   version 4.3, all 14 mapped rows scored, and no map warnings. The key did not
+   appear in the logs or in `cache/data.json`.
+4. After a restart, the server loaded `cache/data.json` and made no upstream
+   call.
+5. With an expired TTL, 5 parallel requests caused one ComparEdge refresh.
+6. With `fetch` stubbed to fail and a stale cache, 4 requests caused one
+   attempt. The stale data was served with both errors, and the next retry was
+   set 15 minutes out. A cold start while offline returned empty `llms` and
+   `services` plus the errors.
+7. Traversal: `/../server.js`, `/%2e%2e/server.js`, `/..%2fserver.js`,
+   `/%2e%2e%2f.env`, `/%00` and malformed escapes all returned 404. `POST`
+   returned 405.
+8. **Not done:** there was no browser in this session to check the page
+   visually.
+9. `git status`: `.env` and `cache/` are ignored. The test cache was deleted
+   afterwards.
+
+Also run: `node --check` on all three JS files.
+
+**Collaboration**
+
+The user set the six-milestone order, made `PLAN.md` the source of truth, and
+required that the key not be exposed. The key-name mismatch was reported back
+instead of `.env` being edited. The `aa-map.json` values are the agent's best
+guesses at each product's free-tier model and need the user's review.
+
+### Interaction 2 — Commit per milestone
+
+**User Prompt**
+
+> one commit per milestone
+
+**Agent Outcome**
+
+Made six milestone commits, plus one for `CLAUDE.md` and this file, on a new
+branch `v1-implementation` (off `main` at `4442f06`). `.env`, `.claude/` and
+`cache/` stay ignored. Not pushed.
+
+**Open Items**
+
+- Merge `v1-implementation` into `main` when reviewed.
+- Rename `x-api-key=` to `AA_API_KEY=` in `.env`.
+- Review the `aa-map.json` values (for example ChatGPT → GPT-5.5 Instant, and
+  Claude → Sonnet 5.5 medium effort).
+- Browser check (step 8): search, tabs, sorting, stale rows, dark mode, narrow
+  viewport.
+
+---
+
+## Session: 2026-09-30
+
+**Objective:** Let `aa-map.json` map one ComparEdge product to several free AA models.
+
+### Interaction 1 — Multi-model entries in aa-map.json
+
+**User Prompt**
+
+> I am manually asjusting the aa-map file. Some platforms have multiple models
+> offered free, so have inadvertantly labeled null. could the comparedge slug
+> accommodate nested objects?
+
+**Agent Outcome**
+
+Yes. A map value can now be an AA slug, an **array of AA slugs**, or `null`,
+for example `"groq": ["llama-4-maverick", "qwen3-32b"]`. For a product with two
+or more models, `join()` adds `models: [{name, intelligence, speed}]` to the row
+and leaves its own scores `null`. The UI shows the product row with
+"Scores: see models below", then one indented `└ <model>` sub-row per model.
+Strings, `null` and one-element arrays behave exactly as before.
+
+**Rationale**
+
+- A flat array was chosen over `{ models: [...], note }` objects because it's
+  less to hand-write, and AA already supplies each model's display name.
+- A multi-model product sorts by its best model's score (`sortValue()`), so it
+  ranks by what its free tier can do, and nulls still sort last. Sub-rows are
+  sorted by the active score column, or by intelligence otherwise.
+- A slug AA doesn't list is kept as a sub-row with its slug as the name and
+  "—" scores, and a warning is logged. Values of any other type log a warning
+  and are treated as `null`.
+- `join()` runs on every request, so no cache change or extra AA quota is
+  needed.
+
+**Changes**
+
+- [`sources.js`](sources.js): new `mapSlugs()` and `aaModel()` helpers, and
+  `join()` emits `models` for multi-model rows.
+- [`public/app.js`](public/app.js): `sortValue()`, `modelRows()`, `llmRow()`
+  now returns an array (the product row plus sub-rows), search also matches
+  model names, and the product count excludes sub-rows.
+- [`public/styles.css`](public/styles.css): `tr.has-models`, `tr.child` and
+  `tr.child.end` styles.
+- [`fixtures/sample.json`](fixtures/sample.json): "Example Model Hub" now has 3
+  invented models, one of them unscored.
+- `PLAN.md`, `README.md`, `CLAUDE.md`: describe the array form.
+- `aa-map.json`: not touched. The user is editing it by hand.
+
+**Verification**
+
+- `node --check` passes on all three JS files, and the fixture parses.
+- A `node -e` test of `join()` with fake data covered a string, `null`, a
+  one-element array, a 3-element array with an unlisted slug, a number, a
+  missing slug, and AA unavailable. It gave the expected shapes and 3
+  warnings.
+- `app.js` was run against a stub DOM in a scratch script. The sub-rows render
+  under their product in both intelligence-desc and speed-asc sort, the
+  search "open 8b" finds the product, and the count is 5 products.
+- `USE_FIXTURE=1` server on port 3107: `/api/data` returns `models` (3 of them)
+  on the hub row, and the other rows are unchanged.
+- The user's current `aa-map.json` (20 entries, no arrays yet) passes the new
+  checks.
+- **Not done:** a visual browser check of the sub-row styling.
+
+**Collaboration**
+
+The user chose one sub-row per model (over "best model only" or a combined
+subtitle) and a flat array (over nested objects with labels).
+
+### Interaction 2 — Commit
+
+**User Prompt**
+
+> commit these changes
+
+**Agent Outcome**
+
+Committed the multi-model change on `v1-implementation`. The user's
+hand-edited `aa-map.json` was left unstaged, since it is their own in-progress
+work and not part of this change. Commit `629231a`. Not pushed.
+
+### Interaction 3 — Chips visible on the LLM tab
+
+**User Prompt**
+
+> There is a rendering bug:
+>
+> when the server is started, the chips div is still present while the LLM tab
+> is selected even though `chips.hidden = state.tab !== 'services' || ...`
+> attempts to hide them.
+
+**Agent Outcome**
+
+The JS was correct. The bug was in the CSS: `.chips { display: flex }` overrode
+the browser's built-in `[hidden] { display: none }`, because page styles take
+priority over built-in ones. Fixed with one global rule in
+[`public/styles.css`](public/styles.css):
+
+```css
+/* Keep the hidden attribute working on elements that set display (e.g. .chips) */
+[hidden] { display: none !important; }
+```
+
+**Rationale**
+
+A global rule was used instead of `.chips[hidden]`, so every element toggled
+with `hidden` (banner, panels, empty state, status) stays safe if it later sets
+`display`.
+
+**Verification**
+
+- Every `hidden` use in `public/` is meant to hide; none relies on showing a
+  hidden element.
+- A fixture server on port 3108 served `styles.css` with the new rule.
+- **Not done:** a visual browser check (no browser in the session).
+
+Committed on request ("commit these changes") as `f4699e0`. Not pushed.
+(Correction: `aa-map.json` was not "left unstaged" here. The user had already
+committed their edits as `fa67e35`.)
+
+### Interaction 4 — Check aa-map.json slugs against AA
+
+**User Prompt**
+
+> make sure the slugs in aa-map are accurate against what AA actually uses. Use
+> the cached json as reference
+
+**Agent Outcome**
+
+Checked every slug against the 686 AA models in `cache/data.json` (index v4.3,
+fetched 2026-09-30). Only 5 of 26 matched. All values now resolve, and `join()`
+on the cached data logs no map warnings.
+
+| ComparEdge slug | Was | Now |
+| --- | --- | --- |
+| chatgpt | `gpt-5.6-luna` | `gpt-5-6-luna-medium` |
+| claude | `claude-sonnet-5-5` (max) | `claude-sonnet-5-5-medium` |
+| gemini | `gemini-3-flash` (3 Flash Preview) | `gemini-3-8-flash-medium` |
+| google-ai-studio | `gemini-3.8-flash` | `gemini-3-8-flash-medium` |
+| cohere | `command-a-plus-05-2026` | `command-a-plus` |
+| mistral-ai | `mistral-medium` (original) | `mistral-medium-3-5` |
+| deepseek | `deepseek-flash` | `deepseek-v4-1-flash` |
+| groq | 6 slugs with `openai/`, `qwen/` prefixes, plus Whisper | `gpt-oss-120b`, `gpt-oss-20b`, `qwen3-8-27b-medium` |
+| replicate | 6 image/video models | `null` |
+| kimi | `kimi-k3` (max) | `kimi-k3-low` |
+
+**Rationale**
+
+- AA slugs use dashes, not dots, and have no vendor prefixes. Its plain slug is
+  usually the top effort level, so effort suffixes were picked explicitly.
+- Image, video and speech models (Replicate, Whisper) and
+  `gpt-oss-safeguard-20b` aren't in AA's language endpoint, so they were
+  removed instead of showing as unscored rows.
+
+**Collaboration**
+
+The user chose the free-tier default effort over the plain slugs, removing the
+non-LLM models, `deepseek-v4-1-flash`, and updating Mistral Medium and Gemini to
+their current versions. The specific effort levels are the agent's guesses:
+medium wherever AA offers it, the AA default (high) for gpt-oss since AA has
+no medium, and low for Kimi K3 since AA only has low and max.
+
+**Verification**
+
+`join()` was run on the cached CE and AA data with the new map. All 11 mapped
+products resolve, with 0 warnings. Gemini 3.8 Flash (medium) has no measured
+speed in AA, so it shows "—".
+
+Committed on request ("commit these changes"). Not pushed.
